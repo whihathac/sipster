@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog generation
+
+      - name: Select Xcode 16
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null || \
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Run tests
+        run: swift test --parallel
+
+      - name: Build .app bundle
+        run: bash build.sh
+
+      - name: Verify bundle
+        run: |
+          codesign --verify --verbose ".build/release/Sipster.app"
+          echo "Bundle version: $(defaults read .build/release/Sipster.app/Contents/Info.plist CFBundleShortVersionString)"
+
+      - name: Create zip archive
+        run: |
+          TAG="${{ github.ref_name }}"
+          ZIP_NAME="Sipster-${TAG}.zip"
+          cd .build/release
+          zip -r "../../${ZIP_NAME}" Sipster.app
+          cd ../..
+          echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+          echo "Created: ${ZIP_NAME} ($(du -sh ${ZIP_NAME} | cut -f1))"
+
+      - name: Compute SHA256 checksum
+        run: |
+          SHA=$(shasum -a 256 "${{ env.ZIP_NAME }}" | awk '{print $1}')
+          echo "SHA256=${SHA}" >> $GITHUB_ENV
+          echo "SHA256: ${SHA}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Sipster ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            1. Download **${{ env.ZIP_NAME }}** below
+            2. Unzip and drag **Sipster.app** to your `/Applications` folder
+            3. Right-click → Open (first launch, to bypass Gatekeeper)
+
+            > **Requirements:** macOS 14 (Sonoma) or later
+
+            **SHA256:** `${{ env.SHA256 }}`
+          files: ${{ env.ZIP_NAME }}

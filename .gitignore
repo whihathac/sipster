@@ -1,0 +1,29 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode user settings
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Generated release artifacts (created by CI / build.sh)
+*.zip
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Claude Code local session data — machine-specific, not for source control
+.claude/
+
+# Local session / agent notes
+agent.md
+
+# Environment files
+.env
+.env.local

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null || \
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build (release)
+        run: swift build -c release
+
+      - name: Run tests
+        run: swift test --parallel
+
+      - name: Build .app bundle
+        run: bash build.sh
+
+      - name: Verify .app bundle
+        run: |
+          APP=".build/release/Sipster.app"
+          echo "Checking bundle structure..."
+          test -d "$APP"                            && echo "✓ .app exists"
+          test -f "$APP/Contents/MacOS/Sipster"     && echo "✓ binary present"
+          test -f "$APP/Contents/Info.plist"        && echo "✓ Info.plist present"
+          codesign --verify --verbose "$APP"        && echo "✓ codesign valid"
+          echo ""
+          echo "Bundle info:"
+          defaults read "$APP/Contents/Info.plist" CFBundleShortVersionString
