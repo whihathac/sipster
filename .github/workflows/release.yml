@@ -43,7 +43,7 @@ jobs:
       - name: Verify bundle
         run: |
           codesign --verify --verbose ".build/release/Sipster.app"
-          echo "Bundle version: $(defaults read .build/release/Sipster.app/Contents/Info.plist CFBundleShortVersionString)"
+          echo "Bundle version: $(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" .build/release/Sipster.app/Contents/Info.plist)"
 
       - name: Create zip archive
         run: |

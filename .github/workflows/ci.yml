@@ -53,4 +53,4 @@ jobs:
           codesign --verify --verbose "$APP"        && echo "✓ codesign valid"
           echo ""
           echo "Bundle info:"
-          defaults read "$APP/Contents/Info.plist" CFBundleShortVersionString
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist"
