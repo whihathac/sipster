@@ -1,12 +1,13 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
+// Swift Testing (import Testing) ships inside Xcode 16+ / Swift 6+.
+// No external package dependency is needed — and swift-testing 6.x uses
+// .unsafeFlags in its own targets, which SPM blocks for remote packages anyway.
+
 let package = Package(
     name: "Sipster",
     platforms: [.macOS(.v14)],
-    dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-testing.git", "6.0.3"..<"6.1.0")
-    ],
     targets: [
         .target(
             name: "SipsterLib",
@@ -22,10 +23,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SipsterTests",
-            dependencies: [
-                "SipsterLib",
-                .product(name: "Testing", package: "swift-testing")
-            ],
+            dependencies: ["SipsterLib"],
             path: "Tests/SipsterTests"
         )
     ]
