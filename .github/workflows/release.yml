@@ -47,17 +47,15 @@ jobs:
 
       - name: Create zip archive
         run: |
-          TAG="${{ github.ref_name }}"
-          ZIP_NAME="Sipster-${TAG}.zip"
-          cd .build/release
-          zip -r "../../${ZIP_NAME}" Sipster.app
-          cd ../..
+          ZIP_NAME="Sipster-${{ github.ref_name }}.zip"
+          # Use GITHUB_WORKSPACE for an absolute, unambiguous output path
+          (cd .build/release && zip -r "${GITHUB_WORKSPACE}/${ZIP_NAME}" Sipster.app)
           echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
-          echo "Created: ${ZIP_NAME} ($(du -sh ${ZIP_NAME} | cut -f1))"
+          echo "Created: ${ZIP_NAME} ($(du -sh "${GITHUB_WORKSPACE}/${ZIP_NAME}" | cut -f1))"
 
       - name: Compute SHA256 checksum
         run: |
-          SHA=$(shasum -a 256 "${{ env.ZIP_NAME }}" | awk '{print $1}')
+          SHA=$(shasum -a 256 "${GITHUB_WORKSPACE}/${{ env.ZIP_NAME }}" | awk '{print $1}')
           echo "SHA256=${SHA}" >> $GITHUB_ENV
           echo "SHA256: ${SHA}"
 
@@ -69,6 +67,7 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
           body: |
             ## Installation
 
@@ -79,4 +78,4 @@ jobs:
             > **Requirements:** macOS 14 (Sonoma) or later
 
             **SHA256:** `${{ env.SHA256 }}`
-          files: ${{ env.ZIP_NAME }}
+          files: ${{ github.workspace }}/${{ env.ZIP_NAME }}
