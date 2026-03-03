@@ -12,8 +12,30 @@ public final class UserSettings: ObservableObject {
     @AppStorage("defaultGlassSizeML") public var defaultGlassSizeML: Int = AppConstants.Defaults.defaultGlassSizeML
     @AppStorage("soundEnabled") public var soundEnabled: Bool = true
     @AppStorage("launchAtLogin") public var launchAtLogin: Bool = false
+    @AppStorage("overlayDrinkSizeML") public var overlayDrinkSizeML: Int = AppConstants.Defaults.defaultGlassSizeML
+    @AppStorage("dailyCaffeineLimitMG") public var dailyCaffeineLimitMG: Int = AppConstants.Defaults.dailyCaffeineLimitMG
+    @AppStorage("useGlassEffect") public var useGlassEffect: Bool = true
+    @AppStorage("hasCompletedOnboarding") public var hasCompletedOnboarding: Bool = false
+
+    // Custom caffeine amounts per beverage (mg per serving)
+    @AppStorage("caffeineCoffeeMG") public var caffeineCoffeeMG: Int = 95
+    @AppStorage("caffeineTeaMG") public var caffeineTeaMG: Int = 47
+    @AppStorage("caffeineEspressoMG") public var caffeineEspressoMG: Int = 63
+    @AppStorage("caffeineEnergyDrinkMG") public var caffeineEnergyDrinkMG: Int = 80
+    @AppStorage("caffeineSodaMG") public var caffeineSodaMG: Int = 34
 
     public init() {}
+
+    public func caffeineMG(for beverage: BeverageType) -> Int {
+        switch beverage {
+        case .water: return 0
+        case .coffee: return caffeineCoffeeMG
+        case .tea: return caffeineTeaMG
+        case .espresso: return caffeineEspressoMG
+        case .energyDrink: return caffeineEnergyDrinkMG
+        case .soda: return caffeineSodaMG
+        }
+    }
 
     public var activeDays: Set<Int> {
         get {

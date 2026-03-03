@@ -30,6 +30,22 @@ public struct NotificationHelper {
         UNUserNotificationCenter.current().add(request)
     }
 
+    public static func sendMissedReminderNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Reminder Missed"
+        content.body = "You missed a hydration reminder. Remember to drink water!"
+        content.sound = .default
+        content.categoryIdentifier = "DRINK_REMINDER"
+
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+
+        UNUserNotificationCenter.current().add(request)
+    }
+
     public static func setupCategories() {
         let drinkAction = UNNotificationAction(
             identifier: "DRINK_ACTION",

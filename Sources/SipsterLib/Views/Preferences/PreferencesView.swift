@@ -15,10 +15,13 @@ public struct PreferencesView: View {
                 .environmentObject(settings)
                 .tabItem { Label("Schedule", systemImage: "clock") }
 
+            HelpTab()
+                .tabItem { Label("Help", systemImage: "questionmark.circle") }
+
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 450, height: 350)
+        .frame(width: 450, height: 500)
     }
 }
 
@@ -40,14 +43,35 @@ public struct GeneralTab: View {
                 )
 
                 Picker("Glass size", selection: $settings.defaultGlassSizeML) {
-                    Text("150ml (Small)").tag(150)
-                    Text("250ml (Medium)").tag(250)
-                    Text("500ml (Large)").tag(500)
+                    ForEach(DrinkSize.allCases) { size in
+                        Text("\(size.mlLabel) (\(size.displayName))").tag(size.rawValue)
+                    }
                 }
 
                 Text("Daily target: \(settings.dailyGoalML)ml")
                     .foregroundStyle(.secondary)
                     .font(.caption)
+
+                Picker("Overlay drink size", selection: $settings.overlayDrinkSizeML) {
+                    ForEach(DrinkSize.allCases) { size in
+                        Text("\(size.mlLabel) (\(size.displayName))").tag(size.rawValue)
+                    }
+                }
+            }
+
+            Section("Caffeine") {
+                Stepper(
+                    "Daily limit: \(settings.dailyCaffeineLimitMG)mg",
+                    value: $settings.dailyCaffeineLimitMG,
+                    in: 100...800,
+                    step: 50
+                )
+
+                Stepper("Coffee: \(settings.caffeineCoffeeMG)mg", value: $settings.caffeineCoffeeMG, in: 0...300, step: 5)
+                Stepper("Tea: \(settings.caffeineTeaMG)mg", value: $settings.caffeineTeaMG, in: 0...200, step: 5)
+                Stepper("Espresso: \(settings.caffeineEspressoMG)mg", value: $settings.caffeineEspressoMG, in: 0...200, step: 5)
+                Stepper("Energy Drink: \(settings.caffeineEnergyDrinkMG)mg", value: $settings.caffeineEnergyDrinkMG, in: 0...300, step: 5)
+                Stepper("Soda: \(settings.caffeineSodaMG)mg", value: $settings.caffeineSodaMG, in: 0...150, step: 5)
             }
 
             Section("App") {
@@ -57,6 +81,8 @@ public struct GeneralTab: View {
                     .onChange(of: launchAtLogin) { _, newValue in
                         LaunchAtLoginManager.setEnabled(newValue)
                     }
+
+                Toggle("Use glass effect overlay", isOn: $settings.useGlassEffect)
             }
         }
         .formStyle(.grouped)
@@ -161,7 +187,7 @@ public struct AboutTab: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Text("A gentle water reminder for your Mac menu bar.\nStay hydrated, stay healthy.")
+            Text("A gentle water & caffeine tracker for your Mac menu bar.\nStay hydrated, stay healthy.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -182,7 +208,17 @@ public struct AboutTab: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("github.com/whihathac/sipster")
+            HStack(spacing: 4) {
+                Text("Made with coffee,")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("\u{2764}\u{FE0F}")
+                Text("and Claude Code")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Link("github.com/whihathac/sipster", destination: URL(string: "https://github.com/whihathac/sipster")!)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
 

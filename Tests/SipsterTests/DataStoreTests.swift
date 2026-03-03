@@ -56,6 +56,42 @@ struct DataStoreTests {
         #expect(today[0].amountML == 250)
     }
 
+    @Test("Backward compatibility - old JSON without beverageType")
+    func backwardCompatibility() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent("test_compat_\(UUID().uuidString).json")
+
+        // Write old-format JSON without beverageType
+        let oldJSON = """
+        [{"id":"550E8400-E29B-41D4-A716-446655440000","timestamp":1000000,"amountML":250,"source":"quickAdd"}]
+        """
+        try oldJSON.data(using: .utf8)!.write(to: fileURL)
+
+        let store = DataStore(fileURL: fileURL)
+        #expect(store.drinks.count == 1)
+        #expect(store.drinks[0].beverageType == .water)
+        #expect(store.drinks[0].caffeineMG == 0)
+
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    @Test("Persists beverage type")
+    func persistsBeverageType() {
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent("test_bev_\(UUID().uuidString).json")
+
+        let store1 = DataStore(fileURL: fileURL)
+        store1.addDrink(DrinkLog(amountML: 250, beverageType: .coffee))
+        #expect(store1.drinks.count == 1)
+
+        let store2 = DataStore(fileURL: fileURL)
+        #expect(store2.drinks.count == 1)
+        #expect(store2.drinks[0].beverageType == .coffee)
+        #expect(store2.drinks[0].caffeineMG == 95)
+
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
     @Test("Drinks in range filters correctly")
     func drinksInRange() {
         let store = makeTempStore()

@@ -5,13 +5,15 @@ public struct WeeklyStatsView: View {
     public let allDrinks: [DrinkLog]
     public let goalGlasses: Int
     public let goalML: Int
+    public let caffeineLimitMG: Int
     public var compact: Bool = false
 
-    public init(records: [DayRecord], allDrinks: [DrinkLog], goalGlasses: Int, goalML: Int, compact: Bool = false) {
+    public init(records: [DayRecord], allDrinks: [DrinkLog], goalGlasses: Int, goalML: Int, caffeineLimitMG: Int = 400, compact: Bool = false) {
         self.records = records
         self.allDrinks = allDrinks
         self.goalGlasses = goalGlasses
         self.goalML = goalML
+        self.caffeineLimitMG = caffeineLimitMG
         self.compact = compact
     }
 
@@ -32,6 +34,13 @@ public struct WeeklyStatsView: View {
 
     private var streak: Int {
         allDrinks.streakDays(goalML: goalML)
+    }
+
+    private var weekAvgCaffeine: Int {
+        let daysWithData = records.filter { $0.drinkCount > 0 }
+        guard !daysWithData.isEmpty else { return 0 }
+        let totalCaffeine = daysWithData.reduce(0) { $0 + $1.totalCaffeineMG }
+        return totalCaffeine / daysWithData.count
     }
 
     public var body: some View {
@@ -78,6 +87,15 @@ public struct WeeklyStatsView: View {
                     subtitle: streak == 1 ? "day" : "days",
                     icon: "flame",
                     color: .orange,
+                    compact: compact
+                )
+
+                StatCard(
+                    title: "Avg Caffeine",
+                    value: "\(weekAvgCaffeine)",
+                    subtitle: "mg/day",
+                    icon: "cup.and.saucer.fill",
+                    color: .brown,
                     compact: compact
                 )
             }

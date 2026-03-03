@@ -53,6 +53,10 @@ public struct DashboardView: View {
         return Double(todayTotal) / Double(settings.dailyGoalML)
     }
 
+    private var todayCaffeine: Int {
+        todaysDrinks.totalCaffeineMG()
+    }
+
     public var body: some View {
         VStack(spacing: 12) {
             // Header
@@ -68,9 +72,22 @@ public struct DashboardView: View {
                 Spacer()
 
                 Menu {
-                    ForEach(DrinkSize.allCases) { size in
-                        Button("\(size.displayName) (\(size.mlLabel))") {
-                            reminderManager.logDrink(amountML: size.rawValue, source: .manual)
+                    Section("Water") {
+                        ForEach(DrinkSize.allCases) { size in
+                            Button("\(size.displayName) (\(size.mlLabel))") {
+                                reminderManager.logDrink(amountML: size.rawValue, source: .manual)
+                            }
+                        }
+                    }
+                    Section("Caffeine") {
+                        ForEach(BeverageType.allCases.filter { $0.isCaffeinated }) { bev in
+                            Button("\(bev.displayName) (\(settings.caffeineMG(for: bev))mg)") {
+                                reminderManager.logDrink(
+                                    amountML: settings.defaultGlassSizeML,
+                                    source: .manual,
+                                    beverageType: bev
+                                )
+                            }
                         }
                     }
                 } label: {
@@ -83,7 +100,7 @@ public struct DashboardView: View {
 
             // Top row: Ring | Stats | Drinks
             HStack(alignment: .top, spacing: 16) {
-                // Column 1: Progress ring
+                // Column 1: Progress ring + caffeine
                 VStack(spacing: 8) {
                     ProgressRingView(
                         progress: progress,
@@ -95,6 +112,17 @@ public struct DashboardView: View {
                     Text("\(todayTotal)ml / \(settings.dailyGoalML)ml")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if todayCaffeine > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "cup.and.saucer.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.brown)
+                            Text("\(todayCaffeine)mg caffeine")
+                                .font(.caption)
+                                .foregroundStyle(todayCaffeine > settings.dailyCaffeineLimitMG ? .red : .secondary)
+                        }
+                    }
                 }
                 .frame(width: 170)
 
@@ -104,6 +132,7 @@ public struct DashboardView: View {
                     allDrinks: dataStore.drinks,
                     goalGlasses: settings.dailyGoalGlasses,
                     goalML: settings.dailyGoalML,
+                    caffeineLimitMG: settings.dailyCaffeineLimitMG,
                     compact: true
                 )
                 .frame(width: 180)
@@ -156,7 +185,8 @@ public struct DashboardView: View {
             WeeklyChartView(
                 records: weekRecords,
                 goal: settings.dailyGoalGlasses,
-                weekDates: weekDates
+                weekDates: weekDates,
+                caffeineLimitMG: settings.dailyCaffeineLimitMG
             )
             .padding(.horizontal)
         }

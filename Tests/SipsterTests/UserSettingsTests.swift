@@ -40,6 +40,15 @@ struct UserSettingsTests {
         #expect(settings.activeDaysRaw == "1,3,5,7")
     }
 
+    @Test("New settings defaults")
+    func newSettingsDefaults() {
+        let settings = UserSettings()
+        #expect(settings.overlayDrinkSizeML == AppConstants.Defaults.defaultGlassSizeML)
+        #expect(settings.dailyCaffeineLimitMG == AppConstants.Defaults.dailyCaffeineLimitMG)
+        #expect(settings.useGlassEffect == true)
+        #expect(settings.hasCompletedOnboarding == false)
+    }
+
     @Test("Reminder intervals")
     func reminderIntervals() {
         #expect(ReminderInterval.fifteenMin.rawValue == 15)

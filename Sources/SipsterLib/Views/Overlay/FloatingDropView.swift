@@ -1,12 +1,21 @@
 import SwiftUI
 
 public struct FloatingDropView: View {
-    public let onDrink: () -> Void
+    public let overlayDrinkSizeML: Int
+    public let useGlassEffect: Bool
+    public let onDrink: (Int) -> Void
     public let onDismiss: () -> Void
     @State private var remainingSeconds: Int = AppConstants.overlayDurationSeconds
     @State private var timer: Timer?
 
-    public init(onDrink: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+    public init(
+        overlayDrinkSizeML: Int,
+        useGlassEffect: Bool,
+        onDrink: @escaping (Int) -> Void,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.overlayDrinkSizeML = overlayDrinkSizeML
+        self.useGlassEffect = useGlassEffect
         self.onDrink = onDrink
         self.onDismiss = onDismiss
     }
@@ -33,10 +42,30 @@ public struct FloatingDropView: View {
 
     public var body: some View {
         ZStack {
-            Circle()
-                .fill(.ultraThinMaterial)
-                .frame(width: 160, height: 160)
+            // Background circle with glassmorphism or solid
+            if useGlassEffect {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: 160, height: 160)
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.3), .white.opacity(0.05)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .shadow(color: .cyan.opacity(0.3), radius: 12)
+            } else {
+                Circle()
+                    .fill(Color.black.opacity(0.6))
+                    .frame(width: 160, height: 160)
+            }
 
+            // Progress ring
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
@@ -51,16 +80,17 @@ public struct FloatingDropView: View {
                 .rotationEffect(.degrees(-90))
                 .animation(.linear(duration: 1), value: progress)
 
-            VStack(spacing: 8) {
+            // Center content
+            VStack(spacing: 6) {
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 40))
+                    .font(.system(size: 36))
                     .foregroundStyle(urgencyColor)
 
                 Text(timeString)
-                    .font(.system(size: 16, weight: .medium, design: .monospaced))
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
                     .foregroundStyle(.primary)
 
-                Text("Tap to drink")
+                Text("Tap to drink \(overlayDrinkSizeML)ml")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -69,7 +99,7 @@ public struct FloatingDropView: View {
         .contentShape(Circle())
         .onTapGesture {
             stopTimer()
-            onDrink()
+            onDrink(overlayDrinkSizeML)
         }
         .onAppear {
             startTimer()

@@ -5,8 +5,8 @@ import Foundation
 @Suite("DrinkLog Array Tests")
 struct DrinkLogArrayTests {
 
-    private func makeDrink(amountML: Int, daysAgo: Int = 0, hour: Int = 12) -> DrinkLog {
-        var log = DrinkLog(amountML: amountML)
+    private func makeDrink(amountML: Int, daysAgo: Int = 0, hour: Int = 12, beverageType: BeverageType = .water) -> DrinkLog {
+        var log = DrinkLog(amountML: amountML, beverageType: beverageType)
         let calendar = Calendar.current
         let day = calendar.date(byAdding: .day, value: -daysAgo, to: Date())!
         var components = calendar.dateComponents([.year, .month, .day], from: day)
@@ -30,6 +30,22 @@ struct DrinkLogArrayTests {
     func totalMLEmpty() {
         let drinks: [DrinkLog] = []
         #expect(drinks.totalML() == 0)
+    }
+
+    @Test("totalCaffeineMG sums correctly")
+    func totalCaffeineMG() {
+        let drinks = [
+            DrinkLog(amountML: 250, beverageType: .water),
+            DrinkLog(amountML: 250, beverageType: .coffee),
+            DrinkLog(amountML: 250, beverageType: .tea),
+        ]
+        #expect(drinks.totalCaffeineMG() == 142) // 0 + 95 + 47
+    }
+
+    @Test("totalCaffeineMG empty array returns 0")
+    func totalCaffeineMGEmpty() {
+        let drinks: [DrinkLog] = []
+        #expect(drinks.totalCaffeineMG() == 0)
     }
 
     @Test("groupedByDay groups correctly")
@@ -88,5 +104,15 @@ struct DrinkLogArrayTests {
         #expect(record.totalML == 750)
         #expect(record.drinkCount == 2)
         #expect(record.glassCount == 3.0)
+    }
+
+    @Test("DayRecord caffeine tracking")
+    func dayRecordCaffeine() {
+        let drinks = [
+            DrinkLog(amountML: 250, beverageType: .coffee),
+            DrinkLog(amountML: 250, beverageType: .espresso),
+        ]
+        let record = DayRecord(date: Date(), drinks: drinks)
+        #expect(record.totalCaffeineMG == 158) // 95 + 63
     }
 }

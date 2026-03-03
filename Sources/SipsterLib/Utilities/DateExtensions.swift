@@ -62,6 +62,10 @@ extension Array where Element == DrinkLog {
         reduce(0) { $0 + $1.amountML }
     }
 
+    public func totalCaffeineMG() -> Int {
+        reduce(0) { $0 + $1.caffeineMG }
+    }
+
     public func streakDays(goalML: Int) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())

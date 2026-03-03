@@ -23,8 +23,8 @@ public struct DrinkListView: View {
                     LazyVStack(spacing: 4) {
                         ForEach(drinks.sorted(by: { $0.timestamp > $1.timestamp })) { drink in
                             HStack {
-                                Image(systemName: iconForSource(drink.source))
-                                    .foregroundStyle(.cyan)
+                                Image(systemName: iconForDrink(drink))
+                                    .foregroundStyle(drink.beverageType == .water ? .cyan : .brown)
                                     .frame(width: 20)
 
                                 Text(drink.timestamp.timeString)
@@ -35,6 +35,15 @@ public struct DrinkListView: View {
                                 Text("\(drink.amountML)ml")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
+
+                                if drink.beverageType != .water {
+                                    Text(drink.beverageType.displayName)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(.brown.opacity(0.1))
+                                        .clipShape(Capsule())
+                                }
 
                                 Text(labelForSource(drink.source))
                                     .font(.caption2)
@@ -51,6 +60,13 @@ public struct DrinkListView: View {
                 .frame(maxHeight: 200)
             }
         }
+    }
+
+    private func iconForDrink(_ drink: DrinkLog) -> String {
+        if drink.beverageType != .water {
+            return drink.beverageType.icon
+        }
+        return iconForSource(drink.source)
     }
 
     private func iconForSource(_ source: DrinkSource) -> String {

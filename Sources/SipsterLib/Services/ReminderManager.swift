@@ -6,16 +6,20 @@ import UserNotifications
 public class ReminderManager: ObservableObject {
     @Published public var nextReminderTime: Date?
     @Published public var isOverlayVisible: Bool = false
+    @Published public var isDesktopIdle: Bool = false
 
     private var timer: Timer?
     private var overlayWindow: FloatingDropWindow?
     private var settings: UserSettings
     private var dataStore: DataStore?
+    private var hasMissedReminder: Bool = false
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     public init(settings: UserSettings = UserSettings()) {
         self.settings = settings
         NotificationHelper.requestPermission()
         NotificationHelper.setupCategories()
+        setupIdleDetection()
         scheduleNextReminder()
     }
 
@@ -26,6 +30,55 @@ public class ReminderManager: ObservableObject {
     public func updateSettings(_ settings: UserSettings) {
         self.settings = settings
         scheduleNextReminder()
+    }
+
+    // MARK: - Idle Detection
+
+    private func setupIdleDetection() {
+        let ws = NSWorkspace.shared.notificationCenter
+
+        let sleepObs = ws.addObserver(
+            forName: NSWorkspace.screensDidSleepNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.isDesktopIdle = true }
+        }
+        let wakeObs = ws.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleDesktopReturn() }
+        }
+        let resignObs = ws.addObserver(
+            forName: NSWorkspace.sessionDidResignActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.isDesktopIdle = true }
+        }
+        let activeObs = ws.addObserver(
+            forName: NSWorkspace.sessionDidBecomeActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleDesktopReturn() }
+        }
+
+        workspaceObservers = [sleepObs, wakeObs, resignObs, activeObs]
+    }
+
+    private func handleDesktopReturn() {
+        isDesktopIdle = false
+        if hasMissedReminder {
+            hasMissedReminder = false
+            fireReminder()
+        }
+    }
+
+    public func cleanup() {
+        let ws = NSWorkspace.shared.notificationCenter
+        for obs in workspaceObservers {
+            ws.removeObserver(obs)
+        }
+        workspaceObservers.removeAll()
     }
 
     // MARK: - Scheduling
@@ -105,6 +158,12 @@ public class ReminderManager: ObservableObject {
     // MARK: - Firing
 
     private func fireReminder() {
+        if isDesktopIdle {
+            hasMissedReminder = true
+            scheduleNextReminder()
+            return
+        }
+
         showFloatingOverlay()
         NotificationHelper.sendReminderNotification()
 
@@ -118,21 +177,26 @@ public class ReminderManager: ObservableObject {
     public func showFloatingOverlay() {
         dismissOverlay()
 
-        let drinkAction: () -> Void = { [weak self] in
+        let drinkAction: (Int) -> Void = { [weak self] amountML in
             Task { @MainActor [weak self] in
-                self?.logDrink(source: .reminder)
+                self?.logDrink(amountML: amountML, source: .reminder)
                 self?.dismissOverlay()
-                self?.scheduleNextReminder()
             }
         }
         let dismissAction: () -> Void = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.dismissOverlay()
                 self?.scheduleNextReminder()
+                NotificationHelper.sendMissedReminderNotification()
             }
         }
 
-        let swiftUIView = FloatingDropView(onDrink: drinkAction, onDismiss: dismissAction)
+        let swiftUIView = FloatingDropView(
+            overlayDrinkSizeML: settings.overlayDrinkSizeML,
+            useGlassEffect: settings.useGlassEffect,
+            onDrink: drinkAction,
+            onDismiss: dismissAction
+        )
         let hostingView = NSHostingView(rootView: swiftUIView)
         hostingView.frame = NSRect(x: 0, y: 0, width: 180, height: 180)
 
@@ -151,10 +215,12 @@ public class ReminderManager: ObservableObject {
 
     // MARK: - Logging
 
-    public func logDrink(amountML: Int? = nil, source: DrinkSource = .quickAdd) {
+    public func logDrink(amountML: Int? = nil, source: DrinkSource = .quickAdd, beverageType: BeverageType = .water) {
         let amount = amountML ?? settings.defaultGlassSizeML
-        let log = DrinkLog(amountML: amount, source: source)
+        let caffeine = settings.caffeineMG(for: beverageType)
+        let log = DrinkLog(amountML: amount, source: source, beverageType: beverageType, caffeineMG: caffeine)
         dataStore?.addDrink(log)
+        scheduleNextReminder()
     }
 
     // MARK: - Status

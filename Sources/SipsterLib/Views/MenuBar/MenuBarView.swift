@@ -26,6 +26,10 @@ public struct MenuBarView: View {
         return min(Double(todayTotal) / Double(settings.dailyGoalML), 1.0)
     }
 
+    private var todayCaffeine: Int {
+        todaysDrinks.totalCaffeineMG()
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -51,12 +55,21 @@ public struct MenuBarView: View {
                 Text("\(todayTotal)ml of \(settings.dailyGoalML)ml")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.brown)
+                    Text("Caffeine: \(todayCaffeine)mg / \(settings.dailyCaffeineLimitMG)mg")
+                        .font(.caption)
+                        .foregroundStyle(todayCaffeine > settings.dailyCaffeineLimitMG ? .red : .secondary)
+                }
             }
 
             Divider()
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Quick Add")
+                Label("Quick Add Water", systemImage: "drop.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -76,6 +89,39 @@ public struct MenuBarView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Log Caffeine")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 6) {
+                    ForEach(BeverageType.allCases.filter { $0.isCaffeinated }) { bev in
+                        Button {
+                            reminderManager.logDrink(
+                                amountML: settings.defaultGlassSizeML,
+                                source: .quickAdd,
+                                beverageType: bev
+                            )
+                        } label: {
+                            VStack(spacing: 2) {
+                                Image(systemName: bev.icon)
+                                    .font(.caption)
+                                Text(bev.displayName)
+                                    .font(.system(size: 9))
+                                Text("\(settings.caffeineMG(for: bev))mg")
+                                    .font(.system(size: 8))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
                         }
                         .buttonStyle(.bordered)
                     }
@@ -106,8 +152,6 @@ public struct MenuBarView: View {
                 Spacer()
 
                 Button {
-                    // Activate the app first so the settings window comes to
-                    // the front — required in LSUIElement apps that have no Dock icon.
                     NSApplication.shared.activate(ignoringOtherApps: true)
                     openSettings()
                 } label: {
@@ -125,6 +169,6 @@ public struct MenuBarView: View {
             .foregroundStyle(.secondary)
         }
         .padding(16)
-        .frame(width: 260)
+        .frame(width: 280)
     }
 }

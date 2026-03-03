@@ -11,6 +11,7 @@ public enum AppConstants {
         public static let defaultGlassSizeML = 250
         public static let activeStartHour = 8
         public static let activeEndHour = 20
+        public static let dailyCaffeineLimitMG = 400
     }
 }
 

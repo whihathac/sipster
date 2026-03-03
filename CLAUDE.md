@@ -1,14 +1,15 @@
-# Sipster - macOS Water Reminder App
+# Sipster - macOS Water & Caffeine Tracker
 
 ## Project Overview
-A native macOS menu bar app that reminds users to drink water. Built with SwiftUI, AppKit, and Swift Charts. Data persisted to JSON (not SwiftData — macros are incompatible with SPM command-line builds).
+A native macOS menu bar app that reminds users to drink water and tracks caffeine intake. Built with SwiftUI, AppKit, and Swift Charts. Data persisted to JSON (not SwiftData — macros are incompatible with SPM command-line builds).
 
 ## Tech Stack
 - **Language:** Swift 5.9+
 - **UI:** SwiftUI (macOS 14+ / Sonoma)
 - **Data:** JSON file persistence with `Codable` + `ObservableObject` DataStore; `@AppStorage` for settings
-- **Overlay:** AppKit NSPanel for floating always-on-top water drop
-- **Charts:** Swift Charts for weekly bar charts
+- **Overlay:** AppKit NSPanel for floating always-on-top water drop with glassmorphism effect
+- **Charts:** Swift Charts for weekly bar charts (water + caffeine views)
+- **Idle Detection:** NSWorkspace notifications for screen sleep/wake and session active/resign
 - **Tests:** Swift Testing framework (requires Xcode 16 / full Xcode — not just Command Line Tools)
 - **Build:** Swift Package Manager + build.sh for .app bundle
 
@@ -28,35 +29,39 @@ swift test --parallel
 ```
 Sources/
   Sipster/                          # Executable target
-    SipsterApp.swift                # @main entry - MenuBarExtra + Window + Settings scenes
+    SipsterApp.swift                # @main entry - MenuBarExtra + Window + Settings + Onboarding scenes
   SipsterLib/                       # Library target (all app logic, importable by tests)
     Models/
-      DrinkLog.swift                # Codable struct - drink event (timestamp, amount, source)
-      DrinkSize.swift               # Enum: Glass(150ml) / Cup(250ml) / Bottle(500ml)
-      DayRecord.swift               # Computed daily aggregation struct
+      BeverageType.swift            # Enum: Water/Coffee/Tea/Espresso/EnergyDrink/Soda with caffeine values
+      DrinkLog.swift                # Codable struct - drink event (timestamp, amount, source, beverageType)
+      DrinkSize.swift               # Enum: QuickSip(50ml) / Glass(150ml) / Cup(250ml) / Bottle(500ml)
+      DayRecord.swift               # Computed daily aggregation struct (water + caffeine)
       UserSettings.swift            # @AppStorage-backed settings (ObservableObject)
     Services/
       DataStore.swift               # JSON persistence to ~/Library/Application Support/Sipster/
-      ReminderManager.swift         # Timer scheduling, overlay presentation, drink logging
+      ReminderManager.swift         # Timer scheduling, overlay, idle detection, drink logging
       SoundManager.swift            # NSSound wrapper
       LaunchAtLoginManager.swift    # SMAppService wrapper
     Views/
-      MenuBar/MenuBarView.swift     # Menu bar popover (quick-add, progress, settings link)
+      MenuBar/MenuBarView.swift     # Menu bar popover (quick-add water + caffeine, progress, settings link)
       MenuBar/MenuBarIconView.swift # Custom Canvas water-drop icon with fill level
       Dashboard/DashboardView.swift # Compact 3-column layout: ring | stats | drinks + chart
       Dashboard/ProgressRingView.swift
       Dashboard/DrinkListView.swift
-      Dashboard/WeeklyChartView.swift
-      Dashboard/WeeklyStatsView.swift
-      Preferences/PreferencesView.swift  # 3-tab: General, Schedule, About
+      Dashboard/WeeklyChartView.swift  # Water/caffeine toggle chart
+      Dashboard/WeeklyStatsView.swift  # Stats including caffeine avg
+      Preferences/PreferencesView.swift  # 4-tab: General, Schedule, Help, About
+      Preferences/HelpTab.swift     # In-app user guide
       Overlay/FloatingDropWindow.swift   # NSPanel subclass
-      Overlay/FloatingDropView.swift     # SwiftUI overlay with countdown ring
+      Overlay/FloatingDropView.swift     # SwiftUI overlay with glassmorphism + countdown ring
+      Onboarding/OnboardingView.swift    # First-launch walkthrough (4 pages)
     Utilities/
       Constants.swift
       DateExtensions.swift
-      NotificationHelper.swift
+      NotificationHelper.swift      # Reminder + missed reminder notifications
 
 Tests/SipsterTests/
+  BeverageTypeTests.swift
   DrinkLogTests.swift
   DateExtensionsTests.swift
   DrinkLogArrayTests.swift
@@ -72,16 +77,20 @@ Tests/SipsterTests/
 - **LSUIElement=true**: Menu bar only, no dock icon
 - **NSPanel** with `.borderless, .nonactivatingPanel` for floating overlay (doesn't steal focus)
 - **Timer-based reminders**: Single timer fires at next calculated time, then recalculates
+- **Timer reset on manual log**: Any drink log resets the reminder timer
 - **JSON persistence**: SwiftData macros incompatible with SPM command-line → `Codable` + JSON file
+- **Backward-compatible Codable**: Custom decoder defaults missing `beverageType` to `.water` for existing data
 - **Library/executable split**: `SipsterLib` is a library target so tests can import it; all types `public`
 - **AppStorage for settings**: Zero-boilerplate UserDefaults binding
-- **SettingsLink**: macOS 14+ API used to open Settings scene from menu bar (replaces broken `NSApp.sendAction`)
+- **NSWorkspace idle detection**: Defers reminders when screen sleeps/locks; shows on return
+- **Glassmorphism overlay**: `.ultraThinMaterial` + gradient border + shadow, toggleable in settings
 - **No external dependencies**: All Apple system frameworks
 
 ## App Scenes
 1. **MenuBarExtra** (.window style) - Primary interface, always in menu bar; icon uses `MenuBarIconView` with dynamic fill level
 2. **Window** (id: "dashboard") - Compact dashboard (680×480), opened on demand
-3. **Settings** - macOS preferences panel (Cmd+,), opened via `SettingsLink`
+3. **Window** (id: "onboarding") - First-launch walkthrough (500×400)
+4. **Settings** - macOS preferences panel (Cmd+,), opened via `SettingsLink`
 
 ## Data Storage
 - Drink logs: `~/Library/Application Support/Sipster/drinks.json`
@@ -89,7 +98,7 @@ Tests/SipsterTests/
 
 ## Release Process
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.2.0
+git push origin v1.2.0
 # → GitHub Actions builds .app, zips it, publishes Release automatically
 ```

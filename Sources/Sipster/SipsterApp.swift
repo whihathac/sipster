@@ -26,6 +26,13 @@ struct SipsterApp: App {
         }
         .defaultSize(width: 720, height: 500)
 
+        Window("Welcome to Sipster", id: "onboarding") {
+            OnboardingView()
+                .environmentObject(settings)
+        }
+        .defaultSize(width: 500, height: 400)
+        .windowResizability(.contentSize)
+
         Settings {
             PreferencesView()
                 .environmentObject(settings)
@@ -47,5 +54,15 @@ struct SipsterApp: App {
         _dataStore = StateObject(wrappedValue: store)
         _settings = StateObject(wrappedValue: settings)
         _reminderManager = StateObject(wrappedValue: manager)
+
+        // Show onboarding on first launch
+        if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                if let window = NSApplication.shared.windows.first(where: { $0.title == "Welcome to Sipster" }) {
+                    window.orderFrontRegardless()
+                }
+            }
+        }
     }
 }

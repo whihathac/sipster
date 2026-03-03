@@ -1,6 +1,6 @@
-# 💧 Sipster
+# Sipster
 
-A native macOS menu bar app that gently reminds you to stay hydrated throughout the day. 
+A native macOS menu bar app that gently reminds you to stay hydrated and tracks your caffeine intake throughout the day.
 
 > Note from Bhavik: Wanted to test out Claude Code so thought of having a quick vibecode session with it. Love the output -- feel free to use/contribute/distribute at your own risk! :D
 
@@ -13,16 +13,23 @@ A native macOS menu bar app that gently reminds you to stay hydrated throughout 
 
 ## Features
 
-- **🔔 Smart Reminders** — Configurable intervals (15 min – 4 hrs), active hours, and specific days of the week
-- **💧 Floating Water Drop** — A persistent overlay appears on reminders; click it to log a drink and dismiss it
-- **⏱ Countdown Timer** — The overlay shows a live 15-minute timer with urgency colour transitions
-- **📊 Daily Progress Ring** — See your hydration percentage at a glance in the menu bar (fill level animates as you drink)
-- **📈 Weekly Dashboard** — Bar chart and stats (daily average, best day, goal-met days, streak) across the past week
-- **⚡ Quick-Add from Menu Bar** — One-click logging for Glass (150 ml), Cup (250 ml), and Bottle (500 ml)
-- **🎵 Sound Feedback** — Optional audio cue when logging a drink
-- **🚀 Launch at Login** — Start Sipster automatically when you log in
-- **🔕 Snooze / Pause** — Temporarily pause reminders when you need focus time
-- **📋 Drink History** — Scrollable log of today's drinks with timestamps and amounts
+- **Smart Reminders** — Configurable intervals (15 min - 2 hrs), active hours, and specific days of the week
+- **Floating Water Drop** — A persistent glassmorphism overlay appears on reminders; click it to log a drink
+- **Countdown Timer** — The overlay shows a live 15-minute timer with urgency colour transitions
+- **Desktop Idle Detection** — Reminders are deferred when your screen is locked or asleep, and shown when you return
+- **Missed Reminder Notifications** — If you don't interact with the overlay, a system notification reminds you
+- **Daily Progress Ring** — See your hydration percentage at a glance in the menu bar (fill level animates)
+- **Weekly Dashboard** — Bar chart and stats (daily average, best day, goal-met days, streak) with water/caffeine toggle
+- **Quick-Add from Menu Bar** — One-click logging for Quick Sip (50 ml), Glass (150 ml), Cup (250 ml), and Bottle (500 ml)
+- **Caffeine Tracking** — Log coffee, tea, espresso, energy drinks, and soda with per-beverage caffeine amounts and a configurable daily limit
+- **Configurable Overlay Drink Size** — Choose what amount gets logged when you tap the floating overlay
+- **Glass Effect Overlay** — Enhanced glassmorphism with frosted glass border and glow (toggleable in Settings)
+- **Timer Reset on Manual Log** — Logging a drink from the menu bar resets the reminder timer
+- **Sound Feedback** — Optional audio cue when a reminder fires
+- **Launch at Login** — Start Sipster automatically when you log in
+- **Drink History** — Scrollable log of today's drinks with timestamps, amounts, and beverage types
+- **Onboarding Walkthrough** — First-launch guide to get you started quickly
+- **In-App Help** — Help tab in Preferences for ongoing reference
 
 ---
 
@@ -43,7 +50,7 @@ A native macOS menu bar app that gently reminds you to stay hydrated throughout 
 1. Go to the [**Releases**](../../releases) page
 2. Download the latest `Sipster-vX.Y.Z.zip`
 3. Unzip and drag **Sipster.app** into `/Applications`
-4. Right-click → **Open** on the first launch (to bypass Gatekeeper on unsigned builds)
+4. Right-click > **Open** on the first launch (to bypass Gatekeeper on unsigned builds)
 
 Sipster will appear in your menu bar — no Dock icon, no clutter.
 
@@ -84,7 +91,7 @@ bash build.sh
 open .build/release/Sipster.app
 ```
 
-Sipster's water-drop icon will appear in your menu bar. On the very first run, macOS may ask for notification permission — allow it so reminder alerts work.
+Sipster's water-drop icon will appear in your menu bar. On the very first run, macOS may ask for notification permission — allow it so reminder alerts work. An onboarding walkthrough will guide you through the key features.
 
 ---
 
@@ -92,19 +99,35 @@ Sipster's water-drop icon will appear in your menu bar. On the very first run, m
 
 | Action | How |
 |--------|-----|
-| Log a drink | Click the floating water drop **or** use Quick-Add in the menu bar |
-| Open Dashboard | Click the menu bar icon → **Open Dashboard** |
-| Open Preferences | Click the menu bar icon → **Settings…** (or `⌘,`) |
+| Log water | Click the floating water drop **or** use Quick-Add in the menu bar |
+| Log caffeine | Use the "Log Caffeine" section in the menu bar popover |
+| Open Dashboard | Click the menu bar icon > **Dashboard** |
+| Open Preferences | Click the menu bar icon > **Settings** (or Cmd+,) |
 | Dismiss overlay | Click anywhere on the drop, or wait for it to expire |
-| Quit | Menu bar → **Quit Sipster** |
+| Quit | Menu bar > **Quit Sipster** |
 
 ### Preferences
 
 | Tab | Options |
 |-----|---------|
-| **General** | Daily goal (glasses), reminder interval, sound on/off, launch at login |
-| **Schedule** | Active hours (start/end time), active days of the week |
-| **About** | Version info |
+| **General** | Daily goal (glasses), glass size, overlay drink size, caffeine daily limit, sound, launch at login, glass effect toggle |
+| **Schedule** | Reminder interval, active days, active hours (start/end time) |
+| **Help** | Quick reference guide for all features |
+| **About** | Version info, links |
+
+### Caffeine Tracking
+
+Sipster tracks caffeine intake alongside water consumption:
+
+| Beverage | Caffeine per serving |
+|----------|---------------------|
+| Coffee | 95 mg |
+| Tea | 47 mg |
+| Espresso | 63 mg |
+| Energy Drink | 80 mg |
+| Soda | 34 mg |
+
+Set a daily caffeine limit in Settings (default: 400 mg). The menu bar and dashboard show warnings when you exceed your limit. The weekly chart can toggle between water and caffeine views.
 
 ---
 
@@ -120,7 +143,7 @@ swift build
 
 # 3. Quit any running instance before relaunching
 pkill -x Sipster || true
-# or from the app: menu bar → Quit Sipster
+# or from the app: menu bar > Quit Sipster
 
 # 4. Build the full .app bundle and launch
 bash build.sh && open .build/release/Sipster.app
@@ -171,23 +194,25 @@ Sipster is built entirely with Apple system frameworks — no external dependenc
 ```
 Sources/
 ├── Sipster/               # Executable target (@main entry point)
-│   └── SipsterApp.swift   # MenuBarExtra + Window + Settings scenes
+│   └── SipsterApp.swift   # MenuBarExtra + Window + Settings + Onboarding scenes
 └── SipsterLib/            # Library target (all app logic, testable)
     ├── Models/
-    │   ├── DrinkLog.swift        # Codable drink event (timestamp, amount, source)
-    │   ├── DrinkSize.swift       # Enum: Glass / Cup / Bottle
-    │   ├── DayRecord.swift       # Daily aggregation
+    │   ├── BeverageType.swift    # Beverage enum with caffeine values
+    │   ├── DrinkLog.swift        # Codable drink event (timestamp, amount, source, beverage)
+    │   ├── DrinkSize.swift       # Enum: Quick Sip / Glass / Cup / Bottle
+    │   ├── DayRecord.swift       # Daily aggregation (water + caffeine)
     │   └── UserSettings.swift    # @AppStorage-backed settings
     ├── Services/
     │   ├── DataStore.swift       # JSON file persistence
-    │   ├── ReminderManager.swift # Timer scheduling + overlay management
+    │   ├── ReminderManager.swift # Timer scheduling + overlay + idle detection
     │   ├── SoundManager.swift    # NSSound wrapper
     │   └── LaunchAtLoginManager.swift
     ├── Views/
     │   ├── MenuBar/              # Popover + dynamic fill-level icon
     │   ├── Dashboard/            # Progress ring, charts, stats, drink list
-    │   ├── Preferences/          # General, Schedule, About tabs
-    │   └── Overlay/              # NSPanel floating water-drop overlay
+    │   ├── Preferences/          # General, Schedule, Help, About tabs
+    │   ├── Overlay/              # NSPanel floating water-drop overlay (glassmorphism)
+    │   └── Onboarding/           # First-launch walkthrough
     └── Utilities/
         ├── Constants.swift
         ├── DateExtensions.swift
@@ -195,6 +220,7 @@ Sources/
 
 Tests/
 └── SipsterTests/          # Swift Testing unit tests
+    ├── BeverageTypeTests.swift
     ├── DrinkLogTests.swift
     ├── DateExtensionsTests.swift
     ├── DrinkLogArrayTests.swift
@@ -212,6 +238,8 @@ Tests/
 | `@AppStorage` for settings | Zero-boilerplate key-value persistence via UserDefaults |
 | Library/executable split | All core logic in `SipsterLib` so it can be unit-tested |
 | Timer-based reminders | Fires at next calculated time, then reschedules — avoids drift |
+| NSWorkspace idle detection | Defers reminders when screen sleeps/locks; shows on return |
+| Backward-compatible Codable | Custom decoder defaults missing `beverageType` to `.water` for existing data |
 
 ---
 
@@ -228,23 +256,29 @@ Tests/
 1. Add a case to `DrinkSize` in `Sources/SipsterLib/Models/DrinkSize.swift`
 2. Update `DrinkSizeTests.swift` to cover the new case
 
+### Adding a new beverage type
+
+1. Add a case to `BeverageType` in `Sources/SipsterLib/Models/BeverageType.swift`
+2. Set its `displayName`, `caffeineMG`, and `icon`
+3. Update `BeverageTypeTests.swift` to cover the new case
+
 ---
 
 ## CI / CD
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| **CI** | Push to `main`/`develop`, PRs | `swift build -c release` → `swift test --parallel` → `bash build.sh` → verify bundle |
+| **CI** | Push to `main`/`develop`, PRs | `swift build -c release` > `swift test --parallel` > `bash build.sh` > verify bundle |
 | **Release** | Push a `vX.Y.Z` tag | CI steps + zip `.app` + create GitHub Release with SHA256 checksum |
 
 To cut a release:
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
-The release workflow publishes a downloadable `Sipster-v1.1.0.zip` automatically.
+The release workflow publishes a downloadable `Sipster-v1.2.0.zip` automatically.
 
 ---
 
@@ -280,4 +314,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built with SwiftUI, Swift Charts, and AppKit on macOS Sonoma using Claude Code.*
+*Made with coffee, love, and Claude Code. Built with SwiftUI, Swift Charts, and AppKit on macOS Sonoma.*
