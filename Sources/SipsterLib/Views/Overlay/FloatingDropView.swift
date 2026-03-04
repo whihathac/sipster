@@ -41,66 +41,83 @@ public struct FloatingDropView: View {
     }
 
     public var body: some View {
-        ZStack {
-            // Background circle with glassmorphism or solid
-            if useGlassEffect {
+        ZStack(alignment: .topTrailing) {
+            // Main circular content
+            ZStack {
+                // Background circle with glassmorphism or solid
+                if useGlassEffect {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .frame(width: 160, height: 160)
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.3), .white.opacity(0.05)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                        )
+                        .shadow(color: .cyan.opacity(0.3), radius: 12)
+                } else {
+                    Circle()
+                        .fill(Color.black.opacity(0.6))
+                        .frame(width: 160, height: 160)
+                }
+
+                // Progress ring
                 Circle()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 160, height: 160)
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.3), .white.opacity(0.05)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.5
-                            )
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.blue, urgencyColor],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
-                    .shadow(color: .cyan.opacity(0.3), radius: 12)
-            } else {
-                Circle()
-                    .fill(Color.black.opacity(0.6))
-                    .frame(width: 160, height: 160)
+                    .frame(width: 150, height: 150)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: progress)
+
+                // Center content
+                VStack(spacing: 6) {
+                    Image(systemName: "drop.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(urgencyColor)
+
+                    Text(timeString)
+                        .font(.system(size: 14, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.primary)
+
+                    Text("Tap to drink \(overlayDrinkSizeML)ml")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 180, height: 180)
+            .contentShape(Circle())
+            .onTapGesture {
+                stopTimer()
+                onDrink(overlayDrinkSizeML)
             }
 
-            // Progress ring
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    LinearGradient(
-                        colors: [.blue, urgencyColor],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
-                )
-                .frame(width: 150, height: 150)
-                .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 1), value: progress)
-
-            // Center content
-            VStack(spacing: 6) {
-                Image(systemName: "drop.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(urgencyColor)
-
-                Text(timeString)
-                    .font(.system(size: 14, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.primary)
-
-                Text("Tap to drink \(overlayDrinkSizeML)ml")
-                    .font(.caption2)
+            // Dismiss button
+            Button {
+                stopTimer()
+                onDismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.secondary)
             }
+            .buttonStyle(.plain)
+            .padding(6)
         }
-        .frame(width: 180, height: 180)
-        .contentShape(Circle())
-        .onTapGesture {
-            stopTimer()
-            onDrink(overlayDrinkSizeML)
-        }
+        .frame(width: 200, height: 200)
         .onAppear {
             startTimer()
         }

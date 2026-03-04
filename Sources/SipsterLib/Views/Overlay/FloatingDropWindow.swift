@@ -4,7 +4,7 @@ import SwiftUI
 public class FloatingDropWindow: NSPanel {
     public init(contentView: NSView) {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 180, height: 180),
+            contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false

@@ -24,8 +24,8 @@ public enum DrinkSize: Int, CaseIterable, Identifiable {
     public var icon: String {
         switch self {
         case .quickSip: return "drop.fill"
-        case .small: return "drop.fill"
-        case .medium: return "drop.fill"
+        case .small: return "wineglass.fill"
+        case .medium: return "cup.and.saucer.fill"
         case .large: return "waterbottle.fill"
         }
     }

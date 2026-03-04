@@ -111,4 +111,15 @@ struct DrinkSizeTests {
     func allCases() {
         #expect(DrinkSize.allCases.count == 4)
     }
+
+    @Test("Icons are distinct and correct")
+    func icons() {
+        #expect(DrinkSize.quickSip.icon == "drop.fill")
+        #expect(DrinkSize.small.icon == "wineglass.fill")
+        #expect(DrinkSize.medium.icon == "cup.and.saucer.fill")
+        #expect(DrinkSize.large.icon == "waterbottle.fill")
+        // Each size should have a unique icon
+        let icons = DrinkSize.allCases.map(\.icon)
+        #expect(Set(icons).count == icons.count)
+    }
 }
